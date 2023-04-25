@@ -1,14 +1,19 @@
 #include "include/raylib.h"
+#include "processInput.c"
 //IMAGES
 #include "include/avatar.h"
 #include "include/bottomborder.h"
 #include "include/rightborder.h"
 
+
+void DrawTextEx2(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint);
+
+
 Texture2D PlayerAvatar;
 Texture2D WindowRightBorder;
 Texture2D WindowBottomBorder;
 
-#define MAX_INPUT_CHARS 47
+#define MAX_INPUT_CHARS 55
 
 int main(void)
 {   
@@ -21,24 +26,29 @@ int main(void)
     // DEFINING INPUT & OUTPUT CHARACTER LIMITS
     char userInput[MAX_INPUT_CHARS + 1] = "\0";      // NOTE: One extra space required for null terminator char '\0'
     int letterCount = 0;
+    char output[1000 + 1] = {"hello world!"}; 
+    output[12] = '\0';
 
-    char output[1000 + 1]; 
-    for (int i = 0; i < 1000; i++) output[i] = 'a';
-    output[1000] = '\0';
-
+    int number = 3;
     
+    // int lengthOfLine = 30;  // IDEA: COULD I DO COLLISION DETECTION WITH TEXT AND A WALL? 
+    // for (int i = 0; i < 1000; i++) {
+    //     if ((i % lengthOfLine == 0) && (i != 0)) output[i] = '\n';
+    //     else output[i] = 'e';
+    // }
+    // output[1000] = '\0';
+
     //                   { X axis, Y axis, box width, box height}
-    Rectangle inputBox = {50, screenHeight - 40, screenWidth, 40 };
+    Rectangle inputBox = {10, screenHeight - 40, screenWidth, 40 };
     Vector2 inputBoxTextPos = {inputBox.x, inputBox.y};
     Rectangle outputBox = {25, 25, screenWidth - 200, screenHeight - 200 };
     Vector2 outputBoxTextPos = {outputBox.x, outputBox.y};
-
     Rectangle directionBox = {10, screenHeight - 160, 40, 60};
 
     // ANOTHER DYNAMIC RECTANGLE NEEDED TO OBSCURE "OFF-SCREEN" TEXT. AND ANOTHER TO CREATE THE ILLUSION OF A BORDER ON THE RIGHT SIDE.
 
     // LOADING FONT
-    Font pixelplay = LoadFont("include/pixelplay.png");
+    Font font = LoadFont("include/pixelplay.png");
 
     // LOADING TEXTURES
     Image avatar = { 0 };
@@ -69,6 +79,7 @@ int main(void)
     Vector2 bottomBorderPos = { 230, screenHeight - 160 };  // y coordinate was 360
 
     SetTargetFPS(50);               // Set game to run at 50 frames-per-second
+    int keyPressTimer = 0;
     //--------------------------------------------------------------------------------------
 
     // Main game loop
@@ -76,7 +87,7 @@ int main(void)
     {   
         // Get char pressed (unicode character) on the queue
         int key = GetCharPressed();
-
+        
         // Check if more characters have been pressed on the same frame
         while (key > 0)
         {
@@ -91,19 +102,15 @@ int main(void)
             key = GetCharPressed();  // Check next character in the queue
         }
 
-        if (IsKeyDown(KEY_BACKSPACE))
-        {
-            letterCount--;
-            if (letterCount < 0) letterCount = 0;
-            userInput[letterCount] = '\0';
-        }
-
         if (IsKeyPressed(KEY_ENTER))
         {
-            // MAKE A FUNCTION TO PROCESS THE ARRAY. RECEIVE AND DISPLAY OUTPUT THE OUTPUT. 
+            // MAKE A FUNCTION TO PROCESS THE ARRAY. RECEIVE AND DISPLAY OUTPUT THE OUTPUT.
+             
+            returnFeedback(&number);  // FUNCTION FROM processInput.c
+            printf("%d", number);
 
-
-            // OUTPUT IS RETURNED TO A LIST WHICH IS ALREADY FULL OF SPACES. EVERY NEW ENTRY DELETES sizeof((char)output) OF SPACES AT 
+            // OUTPUT IS RETURNED TO A LIST WHICH IS ALREADY FULL OF SPACES. EVERY NEW ENTRY DELETES 
+            // (edit) THE NUMBER OF LINES NECESSARY TO FIT THE OUTPUT ON 
 
             // EVERY LINE OF OUTPUT IS MEASURED, THE NUMBER OF LINES REQUIRED IS CALCULATED AND IT IS FED INTO THE BOTTOM ARRAY OF THE 2D ARRAY.
             // THE PREVIOUS ARRAY OF VALUES HAS ITS INDEX REDUCED BY ONE, AND THEREFORE MOVES UP THE 2D ARRAY. THIS HAPPENS FOR EVERY ROW, EXCEPT!
@@ -115,22 +122,37 @@ int main(void)
             letterCount = 0;
             userInput[letterCount] = '\0';
         }
-        //----------------------------------------------------------------------------------
 
-        // Draw
-        //----------------------------------------------------------------------------------
+        // MAKING BACKSPACE FEEL MORE NATURAL ----------------------------------------------------------------
+        if (IsKeyDown(KEY_BACKSPACE))
+        {
+            keyPressTimer++;
+            if (keyPressTimer > 16) {
+                letterCount--;
+            if (letterCount < 0) letterCount = 0;
+            userInput[letterCount] = '\0';
+            }
+        }
+        if (IsKeyReleased(KEY_BACKSPACE)) 
+        {
+            keyPressTimer = 0;
+            letterCount--;
+            if (letterCount < 0) letterCount = 0;
+            userInput[letterCount] = '\0';
+        }
+        // ------------------------------------------------------------------------------------------
+
+        // DRAWING ----------------------------------------------------------------------------------
         BeginDrawing();
 
             ClearBackground(RAYWHITE);
-            screenWidth = GetScreenWidth();  // ALLOWS THE BELOW ELEMENTS TO ADJUST AFTER SCREEN RESIZING
+            screenWidth = GetScreenWidth();  // ALLOWS THE BELOW ELEMENTS TO ADJUST DIMENSIONS/POSITION AFTER SCREEN RESIZING
             screenHeight = GetScreenHeight();
 
-            DrawText("PLACE MOUSE OVER INPUT BOX!", 240, 140, 20, GRAY);
             DrawTexture(WindowRightBorder, screenWidth - 159, rightBorderPos.y, WHITE);
             DrawTexture(WindowBottomBorder, bottomBorderPos.x, screenHeight - 160, WHITE);
             DrawTexture(PlayerAvatar, playerPos.x, playerPos.y, WHITE);
             //CREATE FOLLOWING FUNCTION --> DrawTexture(determinePlayerAvatar(), playerPos.x, playerPos.y, WHITE); 
-
             
             DrawRectangleRec(inputBox, LIGHTGRAY);
             DrawRectangleRec(outputBox, LIGHTGRAY);
@@ -142,11 +164,8 @@ int main(void)
             outputBox.width = screenWidth - 200;
             outputBox.height = screenHeight - 200;
 
-            // DrawText(userInput, (int)inputBox.x + 5, (int)inputBox.y + 3, 30, MAROON);
-            DrawTextEx(pixelplay, userInput, inputBoxTextPos, 33.0, 4.0, BLACK);
-            DrawTextEx(pixelplay, output, outputBoxTextPos, 33.0, 4.0, BLACK);
-
-            DrawText(TextFormat("INPUT\nCHARS: %i/%i", letterCount, MAX_INPUT_CHARS), 315, 250, 8, DARKGRAY);
+            DrawTextEx2(font, userInput, inputBoxTextPos, 33.0, 0.3, BLACK);
+            DrawTextEx2(font, output, outputBoxTextPos, 33.0, 0.3, BLACK);
 
             
             // if (letterCount < MAX_INPUT_CHARS)
@@ -178,4 +197,49 @@ bool IsAnyKeyPressed()
     if ((key >= 32) && (key <= 126)) keyPressed = true;
 
     return keyPressed;
+}
+
+
+void DrawTextEx2(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint)
+{
+    if (font.texture.id == 0) font = GetFontDefault();  // Security check in case of not valid font
+
+    int size = TextLength(text);    // Total size in bytes of the text, scanned by codepoints in loop
+
+    int textOffsetY = 0;            // Offset between lines (on linebreak '\n')
+    float textOffsetX = 0.0f;       // Offset X to next character to draw
+
+    float scaleFactor = fontSize/font.baseSize;         // Character quad scaling factor
+
+    for (int i = 0; i < size;)
+    {
+        // Get next codepoint from byte string and glyph index in font
+        int codepointByteCount = 0;
+        int codepoint = GetCodepointNext(&text[i], &codepointByteCount);
+        int index = GetGlyphIndex(font, codepoint);
+
+        // NOTE: Normally we exit the decoding sequence as soon as a bad byte is found (and return 0x3f)
+        // but we need to draw all the bad bytes using the '?' symbol moving one byte
+        if (codepoint == 0x3f) codepointByteCount = 1;
+
+        if (codepoint == '\n')
+        {
+            // NOTE: Fixed line spacing of 1.5 line-height
+            // TODO: Support custom line spacing defined by user
+            textOffsetY += (int)((font.baseSize + font.baseSize/100.0f)*scaleFactor);
+            textOffsetX = 0.0f;
+        }
+        else
+        {
+            if ((codepoint != ' ') && (codepoint != '\t'))
+            {
+                DrawTextCodepoint(font, codepoint, (Vector2){ position.x + textOffsetX, position.y + textOffsetY }, fontSize, tint);
+            }
+
+            if (font.glyphs[index].advanceX == 0) textOffsetX += ((float)font.recs[index].width*scaleFactor + spacing);
+            else textOffsetX += ((float)font.glyphs[index].advanceX*scaleFactor + spacing);
+        }
+
+        i += codepointByteCount;   // Move text bytes counter to next codepoint
+    }
 }
