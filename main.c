@@ -1,3 +1,4 @@
+#include <string.h>
 #include "include/raylib.h"
 #include "processInput.c"
 //IMAGES
@@ -6,7 +7,8 @@
 #include "include/rightborder.h"
 
 
-void DrawTextEx2(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint);
+// MODIFIED RAYLIB FUNCTION FOR ALTERED \n PROPERTIES
+void DrawTextEx2(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint);  
 
 
 Texture2D PlayerAvatar;
@@ -14,6 +16,7 @@ Texture2D WindowRightBorder;
 Texture2D WindowBottomBorder;
 
 #define MAX_INPUT_CHARS 55
+#define MAX_OUTPUT_CHARS 25
 
 int main(void)
 {   
@@ -26,12 +29,12 @@ int main(void)
     // DEFINING INPUT & OUTPUT CHARACTER LIMITS
     char userInput[MAX_INPUT_CHARS + 1] = "\0";      // NOTE: One extra space required for null terminator char '\0'
     int letterCount = 0;
-    char output[1000 + 1] = {"hello world!"}; 
-    output[12] = '\0';
+    char output[MAX_OUTPUT_CHARS + 1];
 
-    int number = 3;
+    for (int i = 0; i < MAX_OUTPUT_CHARS; i++) output[i] = 'e';
+    output[17] = '\0';
     
-    // int lengthOfLine = 30;  // IDEA: COULD I DO COLLISION DETECTION WITH TEXT AND A WALL? 
+    // int lengthOfLine = 30;
     // for (int i = 0; i < 1000; i++) {
     //     if ((i % lengthOfLine == 0) && (i != 0)) output[i] = '\n';
     //     else output[i] = 'e';
@@ -103,11 +106,20 @@ int main(void)
         }
 
         if (IsKeyPressed(KEY_ENTER))
-        {
-            // MAKE A FUNCTION TO PROCESS THE ARRAY. RECEIVE AND DISPLAY OUTPUT THE OUTPUT.
-             
-            returnFeedback(&number);  // FUNCTION FROM processInput.c
-            printf("%d", number);
+        {    
+            returnFeedback(userInput, output);  // FUNCTION FROM processInput.c
+            // printf("feedback = %s", feedback);
+
+            // int stringSize = sizeof(feedback);  // DETERMINE HOW MANY CHARACTERS NECESSARY TO DELETE TO ACCOMODATE FEEDBACK IN output[]
+            
+            // printf("stringSize = %d", stringSize);
+
+            // for (int i = 0; i <= MAX_OUTPUT_CHARS; i++) {
+            //     output[i] = output[i + stringSize];  // OVERWRITING PREVIOUS INDICES WITH nth INDICES
+            //     if ((output[i + stringSize]) == '\0') break;
+            // }
+
+            // strcat(output, feedback);
 
             // OUTPUT IS RETURNED TO A LIST WHICH IS ALREADY FULL OF SPACES. EVERY NEW ENTRY DELETES 
             // (edit) THE NUMBER OF LINES NECESSARY TO FIT THE OUTPUT ON 
@@ -124,6 +136,12 @@ int main(void)
         }
 
         // MAKING BACKSPACE FEEL MORE NATURAL ----------------------------------------------------------------
+        if (IsKeyPressed(KEY_BACKSPACE)) 
+        {
+            letterCount--;
+            if (letterCount < 0) letterCount = 0;
+            userInput[letterCount] = '\0';
+        }
         if (IsKeyDown(KEY_BACKSPACE))
         {
             keyPressTimer++;
@@ -136,9 +154,6 @@ int main(void)
         if (IsKeyReleased(KEY_BACKSPACE)) 
         {
             keyPressTimer = 0;
-            letterCount--;
-            if (letterCount < 0) letterCount = 0;
-            userInput[letterCount] = '\0';
         }
         // ------------------------------------------------------------------------------------------
 
@@ -199,6 +214,11 @@ bool IsAnyKeyPressed()
     return keyPressed;
 }
 
+
+void appendToOutput(char *pointerToOutput, char *feedback) 
+{
+    ;
+}
 
 void DrawTextEx2(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint)
 {
