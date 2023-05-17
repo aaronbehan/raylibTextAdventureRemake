@@ -16,7 +16,7 @@ Texture2D WindowRightBorder;
 Texture2D WindowBottomBorder;
 
 #define MAX_INPUT_CHARS 55
-#define MAX_OUTPUT_CHARS 150
+#define MAX_OUTPUT_CHARS 1750
 
 int main(void)
 {   
@@ -32,16 +32,10 @@ int main(void)
     char output[MAX_OUTPUT_CHARS + 1];
 
     for (int i = 0; i < MAX_OUTPUT_CHARS; i++) output[i] = 'e';
-    output[17] = '\0';
+    for (int i = 800; i < MAX_OUTPUT_CHARS; i++) output[i] = 'a';
+    output[400] = '\0';  // MAX CHARACTERS SHOULD BE ABOUT 1700
 
     bool wordWrap = true;
-
-    // int lengthOfLine = 30;
-    // for (int i = 0; i < 1000; i++) {
-    //     if ((i % lengthOfLine == 0) && (i != 0)) output[i] = '\n';
-    //     else output[i] = 'e';
-    // }
-    // output[1000] = '\0';
 
     //                   { X axis, Y axis, box width, box height}
     Rectangle inputBox = {10, screenHeight - 40, screenWidth, 40 };
@@ -84,11 +78,11 @@ int main(void)
     Vector2 bottomBorderPos = { 230, screenHeight - 160 };  // y coordinate was 360
 
     SetTargetFPS(50);               // Set game to run at 50 frames-per-second
-    int keyPressTimer = 0;
+    int keyPressTimer = 0;          // IN ORDER TO MAKE BACKSPACE FEEL NATURAL
     //--------------------------------------------------------------------------------------
 
     // Main game loop
-    while (!WindowShouldClose())    // Detect window close button or ESC key
+    while (!WindowShouldClose())    // Detect window close button or ESC key CHANGE ESC KEY TO SOMETHING AKIN TO START
     {   
         // Get char pressed (unicode character) on the queue
         int key = GetCharPressed();
@@ -110,7 +104,6 @@ int main(void)
         if (IsKeyPressed(KEY_ENTER))
         {    
             returnFeedback(userInput, output);  // FUNCTION FROM processInput.c
-            // printf("feedback = %s", feedback);
 
             // int stringSize = sizeof(feedback);  // DETERMINE HOW MANY CHARACTERS NECESSARY TO DELETE TO ACCOMODATE FEEDBACK IN output[]
             
@@ -157,7 +150,6 @@ int main(void)
         {
             keyPressTimer = 0;
         }
-        // ------------------------------------------------------------------------------------------
 
         // DRAWING ----------------------------------------------------------------------------------
         BeginDrawing();
@@ -186,10 +178,11 @@ int main(void)
             DrawTextBoxed(font, output, (Rectangle){ outputBox.x + 4, outputBox.y + 4, outputBox.width - 4, outputBox.height - 4 }, 33.0f, 0.03f, wordWrap, BLACK);
 
             
-            // if (letterCount < MAX_INPUT_CHARS)
+            // if (letterCount < MAX_INPUT_CHARS)  // COULD REINCORPORATE FRAMESCOUNTER FOR THE SAKE OF BLINKING UNDERSCOR.
+            //                                     // COULD USE IT IN MY RNG ... POSSIBLY. IF FRAME ON CERTAIN NUMBER THEN CRIT GUARANTEED. ALMOST LIKE AN ELECTRIC WIND GOD FIST
             // {
             //     // Draw blinking underscore char
-            //     if (((framesCounter/20)%2) == 0) DrawText("|", (int)inputBox.x + 8 + MeasureText(userInput, 40), (int)inputBox.y + 12, 40, MAROON);
+            //     if (((framesCounter/20)%2) == 0) DrawText("_", (int)inputBox.x + 8 + MeasureText(userInput, 40), (int)inputBox.y + 12, 40, MAROON);
             // }
             // else DrawText("Press BACKSPACE to delete chars...", 230, 300, 20, GRAY);
 
@@ -271,7 +264,7 @@ static void DrawTextBoxed(Font font, const char *text, Rectangle rec, float font
 // Draw text using font inside rectangle limits with support for text selection
 static void DrawTextBoxedSelectable(Font font, const char *text, Rectangle rec, float fontSize, float spacing, bool wordWrap, Color tint, int selectStart, int selectLength, Color selectTint, Color selectBackTint)
 {
-    int length = TextLength(text);  // Total length in bytes of the text, scanned by codepoints in loop
+    int length = TextLength(text);  // Total length in bytes of the text, scanned by codepoints in loop, checks for '\0' ending
 
     float textOffsetY = 0;          // Offset between lines (on line break '\n')
     float textOffsetX = 0.0f;       // Offset X to next character to draw
@@ -280,7 +273,7 @@ static void DrawTextBoxedSelectable(Font font, const char *text, Rectangle rec, 
 
     // Word/character wrapping mechanism variables
     enum { MEASURE_STATE = 0, DRAW_STATE = 1 };
-    int state = wordWrap? MEASURE_STATE : DRAW_STATE;
+    int state = MEASURE_STATE;  // CHANGED THIS LINE FROM ORIGINAL 11/05/2023
 
     int startLine = -1;         // Index where to begin drawing (where a line begins)
     int endLine = -1;           // Index where to stop drawing (where a line ends)
@@ -290,7 +283,7 @@ static void DrawTextBoxedSelectable(Font font, const char *text, Rectangle rec, 
     {
         // Get next codepoint from byte string and glyph index in font
         int codepointByteCount = 0;
-        int codepoint = GetCodepoint(&text[i], &codepointByteCount);
+        int codepoint = GetCodepoint(&text[i], &codepointByteCount);  // GETS ASCII VALUE OF CORRESPONDING CHARACTER IN text
         int index = GetGlyphIndex(font, codepoint);
 
         // NOTE: Normally we exit the decoding sequence as soon as a bad byte is found (and return 0x3f)
